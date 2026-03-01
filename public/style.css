@@ -973,6 +973,82 @@ button {
   right: 40px;
 }
 
+/* ═══════════════════════════════════
+   MOBILE RESPONSIVENESS (SMART LAYOUT)
+   ═══════════════════════════════════ */
+@media screen and (max-width: 992px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    border-right: none;
+    border-bottom: 2px solid var(--border-subtle);
+    padding: 15px;
+  }
+
+  .dashboard {
+    padding: 16px;
+  }
+
+  .metrics-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-container {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .projects-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .agent-panel-inner {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 10px 0;
+  }
+
+  .sidebar-item span:not(.nav-icon) {
+    display: none;
+  }
+
+  .system-status-sidebar {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .metrics-row {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    flex-direction: column;
+    gap: 10px;
+    height: auto;
+    margin-bottom: 15px;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+}
+
 /* Markdown inside modal */
 .markdown-body h1,
 .markdown-body h2,

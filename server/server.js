@@ -190,65 +190,57 @@ app.get('/api/artifacts', (req, res) => {
     });
 });
 
-// Download project endpoint (ZIP or raw markdown)
+// Download ONE project file
 app.get('/api/download/:projectId', async (req, res) => {
     try {
         const id = req.params.projectId;
         db.get('SELECT * FROM projects WHERE id = ?', [id], (err, project) => {
             if (err || !project) return res.status(404).send('Project not found');
+            if (!fs.existsSync(project.path)) return res.status(404).send('File not found');
+            res.download(project.path);
+        });
+    } catch (e) {
+        res.status(500).send('Download failed');
+    }
+});
 
-            const projectsRoot = process.env.PROJECTS_ROOT || path.join(__dirname, '../../projects');
-            // Guard against missing or undefined path
-            if (!project.path) {
-                return res.status(404).send('Project path not defined');
-            }
-            const projectPath = path.isAbsolute(project.path)
-                ? project.path
-                : path.join(projectsRoot, project.path);
+// Download ENTIRE PROJECT (Logic to find the true root folder)
+app.get('/api/download-folder/:projectId', async (req, res) => {
+    try {
+        const id = req.params.projectId;
+        db.get('SELECT * FROM projects WHERE id = ?', [id], (err, project) => {
+            if (err || !project) return res.status(404).send('Project not found');
 
-            if (!fs.existsSync(projectPath)) return res.status(404).send('Project path not found');
+            const normPath = project.path.replace(/\\/g, '/');
+            const roots = ['/personal/', '/automejora/', '/tareas-milton/'];
+            let projectFolder = null;
 
-            const stats = fs.statSync(projectPath);
-            if (!stats.isDirectory()) {
-                // If it's a file, just send it
-                res.setHeader('Content-Disposition', `attachment; filename="${path.basename(projectPath)}"`);
-                if (projectPath.endsWith('.md')) res.setHeader('Content-Type', 'text/markdown');
-                return res.sendFile(projectPath);
-            }
-
-            // It's a directory
-            const files = fs.readdirSync(projectPath);
-            const mdFiles = files.filter(f => f.endsWith('.md'));
-            const otherFiles = files.filter(f => !f.endsWith('.md'));
-
-            // If only one markdown file and no other assets, send raw markdown
-            if (mdFiles.length === 1 && otherFiles.length === 0) {
-                const mdPath = path.join(projectPath, mdFiles[0]);
-                res.setHeader('Content-Type', 'text/markdown');
-                res.setHeader('Content-Disposition', `attachment; filename="${mdFiles[0]}"`);
-                return res.sendFile(mdPath);
+            for (const root of roots) {
+                const idx = normPath.indexOf(root);
+                if (idx !== -1) {
+                    const afterRoot = normPath.substring(idx + root.length);
+                    const firstSubfolder = afterRoot.split('/')[0];
+                    if (firstSubfolder && !firstSubfolder.endsWith('.md')) {
+                        projectFolder = normPath.substring(0, idx + root.length + firstSubfolder.length);
+                        break;
+                    }
+                }
             }
 
-            // Otherwise, stream a zip containing the whole folder
-            const zipName = `${project.title || 'project'}.zip`;
+            const finalPath = projectFolder || path.dirname(project.path);
+            if (!fs.existsSync(finalPath)) return res.status(404).send('Project root not found');
+
+            const zipName = `${path.basename(finalPath)}.zip`;
             res.setHeader('Content-Type', 'application/zip');
             res.setHeader('Content-Disposition', `attachment; filename="${zipName}"`);
+
             const archive = archiver('zip', { zlib: { level: 9 } });
-
-            archive.on('error', err => {
-                console.error('Archive error:', err);
-                if (!res.headersSent) res.status(500).send('Download failed');
-            });
-
             archive.pipe(res);
-            archive.directory(projectPath, false);
+            archive.directory(finalPath, false);
             archive.finalize();
-
         });
-
     } catch (e) {
-        console.error(e);
-        res.status(500).send('Download failed');
+        res.status(500).send('Project download failed');
     }
 });
 

@@ -314,7 +314,7 @@ const Dashboard = {
 const ProjectsSection = {
     activeTag: null,
     sortBy: 'updated',
-    isGrouped: false,
+    isGrouped: true,
 
     init() {
         const sortSelect = document.getElementById('sort-select');
@@ -326,6 +326,7 @@ const ProjectsSection = {
         }
         const groupBtn = document.getElementById('group-toggle');
         if (groupBtn) {
+            groupBtn.classList.add('active'); // Start as active
             groupBtn.addEventListener('click', () => {
                 this.isGrouped = !this.isGrouped;
                 groupBtn.classList.toggle('active', this.isGrouped);
@@ -379,21 +380,56 @@ const ProjectsSection = {
             return;
         }
 
-        const groups = new Map();
-        if (this.isGrouped) {
-            filtered.forEach(p => {
-                const parts = p.title.split(/[:\-\—]/);
-                let groupName = parts.length > 1 ? parts[0].trim() : 'Otros';
-                // Heuristic: If groupName is just a date (YYYY-MM-DD), try the next part
-                if (/^\d{4}-\d{2}-\d{2}$/.test(groupName) && parts.length > 2) {
-                    groupName = parts[1].trim();
-                } else if (/^\d{4}-\d{2}-\d{2}$/.test(groupName)) {
-                    groupName = 'Relatos Diarios';
-                }
-                if (!groups.has(groupName)) groups.set(groupName, []);
-                groups.get(groupName).push(p);
-            });
-        }
+        // 4. Recursive Folder-Based Grouping Logic
+        const folderGroups = new Map();
+
+        filtered.forEach(p => {
+            // Normailize path
+            const normPath = p.path.replace(/\\/g, '/');
+            const parts = normPath.split('/');
+
+            // Find the base root (personal, automejora, tareas-milton)
+            const rootIdx = parts.findIndex(part => ['personal', 'automejora', 'tareas-milton'].includes(part));
+
+            if (rootIdx === -1) {
+                // Should not happen with current structure, but for safety:
+                const groupKey = 'ROOT_OTHER';
+                if (!folderGroups.has(groupKey)) folderGroups.set(groupKey, { label: 'OTROS', items: [] });
+                folderGroups.get(groupKey).items.push(p);
+                return;
+            }
+
+            const isBestiary = normPath.toLowerCase().includes('bestiary');
+            if (isBestiary) {
+                // Find common bestiary root (e.g., .../personal/bestiary)
+                const bIdx = parts.findIndex(p => p.toLowerCase() === 'bestiary');
+                const groupKey = parts.slice(0, bIdx + 1).join('/');
+                const groupLabel = '🐉 Bestiarium Technologicum';
+                if (!folderGroups.has(groupKey)) folderGroups.set(groupKey, { label: groupLabel, items: [] });
+                folderGroups.get(groupKey).items.push(p);
+                return;
+            }
+
+            // A folder is a project if it is NOT one of the roots and it's 1 level deep from roots
+            // e.g. /personal/superheroes-in-color/ -> Project
+            // e.g. /personal/superheroes-in-color/articles/ -> Still that same Project
+
+            const projectFolderName = (parts.length > rootIdx + 1) ? parts[rootIdx + 1] : null;
+
+            if (!projectFolderName || projectFolderName.endsWith('.md')) {
+                // It's a file in the root, group by root name
+                const rootName = parts[rootIdx];
+                const groupKey = 'ROOT_' + rootName;
+                if (!folderGroups.has(groupKey)) folderGroups.set(groupKey, { label: rootName.toUpperCase(), items: [] });
+                folderGroups.get(groupKey).items.push(p);
+            } else {
+                // It's inside a project subfolder
+                const groupKey = parts.slice(0, rootIdx + 2).join('/');
+                const groupLabel = projectFolderName.toUpperCase().replace(/[_-]/g, ' ');
+                if (!folderGroups.has(groupKey)) folderGroups.set(groupKey, { label: groupLabel, items: [] });
+                folderGroups.get(groupKey).items.push(p);
+            }
+        });
 
         const renderCard = (p, groupIcon = null) => {
             let thumbHtml = `<span style="font-size:2rem;opacity:0.2;">${groupIcon || getIcon(p.path)}</span>`;
@@ -466,22 +502,60 @@ const ProjectsSection = {
 
         if (this.isGrouped) {
             let groupHtml = '';
-            groups.forEach((items, name) => {
-                groupHtml += `
-                    <div class="project-group" style="grid-column: 1 / -1; margin-top: 20px;">
-                        <div style="font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-dim); border-bottom:1px solid var(--border-subtle); padding-bottom:8px; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
-                            <span style="opacity:0.5;">📦 Group:</span> ${esc(name)} <span class="tag" style="font-size:0.6rem;">${items.length} items</span>
+            const sortedGroups = Array.from(folderGroups.entries()).sort((a, b) => a[1].label.localeCompare(b[1].label));
+
+            sortedGroups.forEach(([key, group]) => {
+                const isProjectFolder = !key.startsWith('ROOT_');
+
+                if (isProjectFolder && group.items.length > 1) {
+                    // Render ONE specialized Folder Card for this project
+                    const rep = group.items[0];
+                    const finalImg = rep.resolved_url || rep.thumbnail_path;
+                    let thumbHtml = `<span style="font-size:2.5rem;opacity:0.3;">📂</span>`;
+                    if (finalImg) {
+                        thumbHtml = `<img src="${finalImg}" style="width:100%; height:100%; object-fit:cover; opacity:0.6;">
+                                     <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4);">
+                                        <span style="font-size:2rem;">📁</span>
+                                     </div>`;
+                    }
+
+                    groupHtml += `
+                        <div class="card project-folder-card" style="padding:16px; cursor:pointer; position:relative;" onclick="Modal.openFolder('${esc(group.label)}', '${key}')">
+                            <div class="project-card-thumb" style="height:140px; border-radius:var(--radius-sm); overflow:hidden; position:relative; background:var(--bg-2); display:flex; align-items:center; justify-content:center; margin-bottom:12px;">
+                                ${thumbHtml}
+                                <div style="position:absolute; top:8px; right:8px; background:var(--accent-primary); color:white; font-size:0.6rem; padding:2px 8px; border-radius:10px; font-weight:700; box-shadow:0 2px 5px rgba(0,0,0,0.3);">
+                                    ${group.items.length} PARTES
+                                </div>
+                            </div>
+                            <div style="font-weight:700; font-size:0.85rem; margin-bottom:4px; letter-spacing:0.5px; text-transform:uppercase;">${esc(group.label)}</div>
+                            <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:16px;">Carpeta de proyecto con ${group.items.length} documentos.</p>
+                            <div style="display:flex; gap:8px; align-items:center; margin-top:auto;">
+                                <button class="tag-badge" style="background:var(--bg-3); flex-grow:1; border:none; padding:6px; font-size:0.7rem;">ABRIR PROYECTO</button>
+                                <a href="/api/download-folder/${rep.id}" class="download-btn" title="Descargar Carpeta Completa (ZIP)" onclick="event.stopPropagation();" style="text-decoration:none; font-size:1.1rem;">📦</a>
+                            </div>
                         </div>
-                        <div class="projects-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:24px;">
-                            ${items.map(p => renderCard(p, '📄')).join('')}
+                    `;
+                } else {
+                    // Group header for root files or single items
+                    groupHtml += `
+                        <div class="project-group" style="grid-column: 1 / -1; margin-top: 20px;">
+                            <div style="font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-dim); border-bottom:1px solid var(--border-subtle); padding-bottom:8px; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+                                <span style="opacity:0.5;">📂</span> ${esc(group.label)} <span class="tag" style="font-size:0.6rem;">${group.items.length} items</span>
+                            </div>
+                            <div class="projects-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:24px;">
+                                ${group.items.map(p => renderCard(p, '📄')).join('')}
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
             });
             c.innerHTML = groupHtml;
-            c.style.display = 'block'; // Avoid original grid layout for individual cards
+            c.style.display = 'grid'; // Grid needed for folder cards
+            c.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+            c.style.gap = '24px';
         } else {
             c.style.display = 'grid';
+            c.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
             c.innerHTML = filtered.map(p => renderCard(p)).join('');
         }
     },
@@ -692,6 +766,7 @@ function showError(id, msg) { document.getElementById(id).innerHTML = `<div clas
 //  MODAL & LIGHTBOX
 // ════════════════════════════════════════════════
 const Modal = {
+    currentProjectFolder: null,
     init() {
         document.getElementById('modal-close').addEventListener('click', () => this.close());
         document.getElementById('modal-back').addEventListener('click', () => this.close());
@@ -703,9 +778,61 @@ const Modal = {
         });
     },
 
-    async openProject(projectId) {
+    async openFolder(label, groupKey) {
+        this.currentProjectFolder = { label, groupKey };
+        document.getElementById('project-modal').classList.add('active');
+        document.getElementById('modal-title').innerText = `Proyecto: ${label}`;
+        document.getElementById('modal-back').style.display = 'none';
+
+        const dirItems = DataManager.projects.filter(p => {
+            const norm = p.path.replace(/\\/g, '/');
+            if (groupKey === 'ROOT_BESTIARY') return norm.toLowerCase().includes('bestiary');
+            return norm.startsWith(groupKey + '/');
+        });
+
+        dirItems.sort((a, b) => {
+            const na = a.path.toLowerCase(); const nb = b.path.toLowerCase();
+            if (na.includes('index.md')) return -1; if (nb.includes('index.md')) return 1;
+            if (na.includes('readme.md')) return -1; if (nb.includes('readme.md')) return 1;
+            return (a.title || '').localeCompare(b.title || '');
+        });
+
+        let html = `
+            <div style="margin-bottom:20px; color:var(--text-muted); font-size:0.85rem; border-left:3px solid var(--accent-primary); padding-left:12px;">
+                Cargando contenidos de <strong>${esc(label)}</strong>. Se han detectado ${dirItems.length} archivos.
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr; gap:10px;">
+                ${dirItems.map(p => {
+            const isMeta = p.path.toLowerCase().includes('index.md') || p.path.toLowerCase().includes('readme.md');
+            const relPath = p.path.replace(/\\/g, '/').split(groupKey + '/').pop();
+
+            return `
+                    <div class="card" style="padding:12px 18px; display:flex; align-items:center; gap:15px; cursor:pointer; background:${isMeta ? 'var(--bg-2)' : 'var(--bg-1)'}; border:1px solid ${isMeta ? 'var(--border-accent)' : 'var(--border-subtle)'};" onclick="Modal.openProject('${p.id}', true)">
+                        <span style="font-size:1.2rem; filter: grayscale(${isMeta ? 0 : 1});">${isMeta ? '📂' : '📄'}</span>
+                        <div style="flex-grow:1;">
+                            <div style="font-weight:600; font-size:0.85rem; color:${isMeta ? 'var(--accent-primary)' : 'var(--text-primary)'};">${esc(p.title)} ${isMeta ? '<span style="font-size:0.6rem; vertical-align:middle; opacity:0.6;">(MAIN)</span>' : ''}</div>
+                            <div style="font-size:0.65rem; color:var(--text-faint); font-family:var(--font-mono);">${esc(relPath)}</div>
+                        </div>
+                        <span style="color:var(--accent-primary); font-size:0.7rem; font-weight:700; opacity:0.6;">LEER →</span>
+                    </div>
+                `}).join('')}
+            </div>
+        `;
+        document.getElementById('modal-body').innerHTML = html;
+    },
+
+    async openProject(projectId, fromFolder = false) {
         document.getElementById('project-modal').classList.add('active');
         document.getElementById('modal-body').innerHTML = '<div class="loading-state">Cargando detalles...</div>';
+
+        // Show/Hide back button
+        const backBtn = document.getElementById('modal-back');
+        if (fromFolder && this.currentProjectFolder) {
+            backBtn.style.display = 'block';
+            backBtn.onclick = () => this.openFolder(this.currentProjectFolder.label, this.currentProjectFolder.groupKey);
+        } else {
+            backBtn.style.display = 'none';
+        }
 
         try {
             const res = await fetch(`/api/projects/${projectId}`);

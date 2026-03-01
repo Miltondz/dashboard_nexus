@@ -25,7 +25,7 @@ router.post('/ideas', express.json(), (req, res) => {
         return res.status(400).json({ error: 'Title is required for an idea' });
     }
 
-    const query = `INSERT INTO ideas (title, content, tags) VALUES (?, ?, ?)`;
+    const query = `INSERT INTO ideas (title, content, tags) VALUES (?, ?, ?, ?)`;
     db.run(query, [title, content || '', tags || ''], function (err) {
         if (err) {
             console.error('Failed to insert idea:', err);
@@ -40,7 +40,7 @@ router.post('/ideas', express.json(), (req, res) => {
 
 // Create a new task
 router.post('/tasks', express.json(), (req, res) => {
-    const { title, status, due_date } = req.body;
+    const { title, status, due_date, description } = req.body;
 
     if (!title) {
         return res.status(400).json({ error: 'Title is required for a task' });
@@ -48,8 +48,8 @@ router.post('/tasks', express.json(), (req, res) => {
 
     const taskStatus = status || 'pending'; // 'pending', 'in_progress', 'done'
 
-    const query = `INSERT INTO tasks (title, status, due_date) VALUES (?, ?, ?)`;
-    db.run(query, [title, taskStatus, due_date || null], function (err) {
+    const query = `INSERT INTO tasks (title, status, due_date, description) VALUES (?, ?, ?, ?)`;
+    db.run(query, [title, taskStatus, due_date || null, description || ''], function (err) {
         if (err) {
             console.error('Failed to insert task:', err);
             return res.status(500).json({ error: 'Database error while saving task' });
