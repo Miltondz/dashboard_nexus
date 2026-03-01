@@ -20,8 +20,13 @@
 
 ### 🏷️ Content & Metadata
 - **Live Tag Management:** Add or delete tags directly from the UI. The Nexus engine automatically synchronizes these changes back to the physical **Markdown front-matter** on disk.
+- **Hierarchical Project Grouping:** Intelligent folder-based grouping that consolidates multi-file projects (like stories or bestiaries) into a single "Folder Card" with recursive file exploration.
+- **Smart ZIP Downloads:** One-click Zipping of entire project directories via the 📦 icon, simplifying content portability.
 - **Activity Heatmap:** A GitHub-style productivity visualization tracking project updates and intensity over the last 28 days.
 - **Markdown Core:** Renders full Markdown content with secure image proxies for high-resolution local assets.
+
+### 📱 Responsive Design
+- **Cross-Device Ready:** Re-engineered CSS with smart media queries. The sidebar transforms and layouts reflow seamlessly for mobile and tablet browsing without losing functionality.
 
 ---
 
