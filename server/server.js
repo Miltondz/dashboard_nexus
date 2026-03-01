@@ -43,6 +43,45 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });
 });
 
+// Dynamic Dashboard Stats
+app.get('/api/stats', (req, res) => {
+    const stats = {
+        projects: 0,
+        artifacts: 0,
+        tasks: 0,
+        pendingTasks: 0,
+        ideas: 0,
+        lastWeekActivity: 0
+    };
+
+    const qProjects = "SELECT COUNT(*) as count FROM projects";
+    const qArtifacts = "SELECT COUNT(*) as count FROM artifacts WHERE mime = 'image'";
+    const qTasks = "SELECT COUNT(*) as count FROM tasks";
+    const qPending = "SELECT COUNT(*) as count FROM tasks WHERE status != 'done'";
+    const qIdeas = "SELECT COUNT(*) as count FROM ideas";
+    const qActivity = "SELECT COUNT(*) as count FROM projects WHERE updated_at >= datetime('now', '-7 days')";
+
+    db.get(qProjects, (err, rP) => {
+        if (rP) stats.projects = rP.count;
+        db.get(qArtifacts, (err, rA) => {
+            if (rA) stats.artifacts = rA.count;
+            db.get(qTasks, (err, rT) => {
+                if (rT) stats.tasks = rT.count;
+                db.get(qPending, (err, rPen) => {
+                    if (rPen) stats.pendingTasks = rPen.count;
+                    db.get(qIdeas, (err, rI) => {
+                        if (rI) stats.ideas = rI.count;
+                        db.get(qActivity, (err, rAct) => {
+                            if (rAct) stats.lastWeekActivity = rAct.count;
+                            res.json(stats);
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
 // Fetch projects with their thumbnail path if it exists
 app.get('/api/projects', (req, res) => {
     const query = `

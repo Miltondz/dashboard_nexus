@@ -15,17 +15,25 @@ document.addEventListener('DOMContentLoaded', () => {
 //  DATA LAYER
 // ════════════════════════════════════════════════
 const DataManager = {
-    projects: [], artifacts: [], ideas: [], tasks: [],
-    timelineDays: 7, // Global state for timeline filters
+    projects: [], artifacts: [], ideas: [], tasks: [], stats: {},
+    timelineDays: 7,
 
     async fetchAll() {
         await Promise.all([
             this.fetchProjects(),
             this.fetchArtifacts(),
             this.fetchIdeas(),
-            this.fetchTasks()
+            this.fetchTasks(),
+            this.fetchStats()
         ]);
         this.renderGlobalState();
+    },
+
+    async fetchStats() {
+        try {
+            const res = await fetch('/api/stats');
+            this.stats = await res.json();
+        } catch (e) { this.stats = { projects: 0, artifacts: 0, pendingTasks: 0, ideas: 0 }; }
     },
 
     async fetchProjects() {
@@ -119,10 +127,11 @@ const Search = {
 // ════════════════════════════════════════════════
 const AgentPanel = {
     render() {
-        const activeTasks = DataManager.tasks.filter(t => t.status !== 'done').length;
+        const stats = DataManager.stats;
+        const activeTasks = stats.pendingTasks || 0;
         let status = activeTasks > 0 ? 'PROCESANDO' : 'MONITOREANDO';
         let title = 'Agente Nexus';
-        let desc = `Analizando tu ecosistema. Tienes ${activeTasks} tareas activas. El motor V5 está online.`;
+        let desc = `Analizando tu ecosistema. Tienes ${activeTasks} tareas activas. El motor V5 está online y sincronizado.`;
 
         document.getElementById('agent-hero-container').innerHTML = `
       <div>
@@ -132,7 +141,7 @@ const AgentPanel = {
         </div>
         <h2 class="agent-title">${title}</h2>
         <p class="agent-desc">${desc}</p>
-        <div class="agent-action">Última synchronización: ${new Date().toLocaleTimeString()}</div>
+        <div class="agent-action">Sincronización de Archivos Activa — Registro en BD: ${stats.projects || 0} proyectos</div>
       </div>
     `;
     }
@@ -144,32 +153,31 @@ const AgentPanel = {
 const Dashboard = {
     renderMetrics() {
         const container = document.getElementById('metrics-row');
-        const filteredProj = DataManager.getFilteredProjects();
+        const s = DataManager.stats;
 
-        const tProj = filteredProj.length;
-        const tTasks = DataManager.tasks.filter(t => t.status !== 'done').length;
-        const tIdeas = DataManager.ideas.length;
-        const tArts = DataManager.artifacts.length;
-
-        // Simulate deltas based on timeline filtering vs total
-        const pDelta = DataManager.projects.length > 0 ? Math.round((tProj / DataManager.projects.length) * 100) : 0;
+        // Calculate real activity deltas if we have data
+        const pDelta = s.projects > 0 ? Math.round((s.lastWeekActivity / s.projects) * 100) : 0;
 
         container.innerHTML = `
-      ${this.createMetricWidget('Proyectos', tProj, pDelta)}
-      ${this.createMetricWidget('Tareas Activas', tTasks, -12)}
-      ${this.createMetricWidget('Ideas Banco', tIdeas, 5)}
-      ${this.createMetricWidget('Artefactos', tArts, 25)}
+      ${this.createMetricWidget('Proyectos', s.projects || 0, pDelta)}
+      ${this.createMetricWidget('Tareas Activas', s.pendingTasks || 0, 0)}
+      ${this.createMetricWidget('Banco de Ideas', s.ideas || 0, 0)}
+      ${this.createMetricWidget('Artefactos', s.artifacts || 0, 0)}
     `;
     },
 
     createMetricWidget(title, value, delta) {
+        const deltaHtml = delta !== 0 ? `
+          <span class="delta ${delta > 0 ? 'up' : 'down'}">
+            ${delta > 0 ? '+' : ''}${delta}%
+          </span>
+        ` : '';
+
         return `
       <div class="card metric-widget">
         <div class="metric-header">
           <span>${title}</span>
-          <span class="delta ${delta > 0 ? 'up' : 'down'}">
-            ${delta > 0 ? '+' : ''}${delta}%
-          </span>
+          ${deltaHtml}
         </div>
         <div class="metric-value">${value}</div>
       </div>

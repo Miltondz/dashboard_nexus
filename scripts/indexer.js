@@ -8,7 +8,7 @@ const sqlite3 = require("sqlite3").verbose();
 const sharp = require("sharp");
 
 // -------------------------------------------------------------------
-// 1️⃣  Configuración de la BD (usa la misma ruta que el servidor
+// 1️⃣  Configuración de la BD
 // -------------------------------------------------------------------
 const dbPath = process.env.DB_PATH || path.join(__dirname, "..", ".dashboard", "dashboard.db");
 const db = new sqlite3.Database(dbPath, err => {
@@ -25,7 +25,10 @@ const db = new sqlite3.Database(dbPath, err => {
 const projectSchema = z.object({
     title: z.string(),
     description: z.string().optional(),
-    tags: z.array(z.string()).optional(),
+    tags: z.union([z.array(z.string()), z.string()]).optional().transform(val => {
+        if (typeof val === 'string') return val.split(',').map(s => s.trim());
+        return val;
+    }),
     image: z.string().optional(),
 });
 
@@ -34,7 +37,7 @@ const projectSchema = z.object({
 // -------------------------------------------------------------------
 function upsertProject(data, filePath) {
     const { title, description = "", tags = [] } = data;
-    const tagsStr = tags.join(",");
+    const tagsStr = Array.isArray(tags) ? tags.join(",") : tags;
     db.run(
         `INSERT INTO projects (title, path, description, tags)
      VALUES (?,?,?,?)
@@ -46,13 +49,13 @@ function upsertProject(data, filePath) {
         [title, filePath, description, tagsStr],
         err => {
             if (err) console.error("❌ Error DB:", err.message);
-            else console.log(`🔄 Proyecto actualizado → ${filePath}`);
+            else console.log(`🔄 Proyecto sincronizado → ${path.basename(filePath)}`);
         }
     );
 }
 
 // -------------------------------------------------------------------
-// 4️⃣  Generar thumbnail (si el markdown contiene una imagen)
+// 4️⃣  Generar thumbnail
 // -------------------------------------------------------------------
 async function generateThumbnail(imagePath, destFolder) {
     try {
@@ -64,110 +67,154 @@ async function generateThumbnail(imagePath, destFolder) {
             .toFile(thumbPath);
         return thumbPath;
     } catch (e) {
-        console.warn("⚠️ No se pudo crear thumbnail:", e.message);
+        console.warn("⚠️ Thumbnail skip:", e.message);
         return null;
     }
 }
 
 // -------------------------------------------------------------------
-// 5️⃣  Observador de los directorios de proyectos
+// 5️⃣  Lógica de Asociación Inteligente
 // -------------------------------------------------------------------
-const watchDirs = [
-    path.join(process.env.HOME, "openclaw/workspace/projects/personal"),
-    path.join(process.env.HOME, "openclaw/workspace/projects/automejora"),
-    path.join(process.env.HOME, "openclaw/workspace/projects/tareas-milton")
-];
 
+function findMatchingMd(imagePath) {
+    const dir = path.dirname(imagePath);
+    const siblings = fs.readdirSync(dir);
+    const mdFiles = siblings.filter(s => s.endsWith('.md'));
+    const imgName = path.basename(imagePath);
 
-// Ensure directories exist before watching
-watchDirs.forEach(dir => {
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-});
+    if (mdFiles.length === 0) return null;
+    if (mdFiles.length === 1) return path.join(dir, mdFiles[0]);
 
-const watcher = chokidar.watch(watchDirs, {
-    ignored: /(^|[\/\\])\../, // ignora .git, .DS_Store, etc.
-    persistent: true
-});
+    // Buscar por prefijo o mención
+    for (const md of mdFiles) {
+        const mdPath = path.join(dir, md);
+        const mdNameBase = path.basename(md, '.md');
+        if (imgName.startsWith(mdNameBase)) return mdPath;
 
-watcher.on("add", async file => {
-    if (!file.endsWith(".md")) return; // solo .md
-    const raw = fs.readFileSync(file, "utf8");
-    let projectData = {};
-    const fmMatch = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-    if (fmMatch) {
-        try {
-            const front = yaml.parse(fmMatch[1]);
-            const validation = projectSchema.safeParse(front);
-            if (validation.success) {
-                projectData = validation.data;
-            } else {
-                console.warn(`⚠️ Front‑matter inválido en ${file}:`, validation.error.errors);
+        const content = fs.readFileSync(mdPath, 'utf8');
+        if (content.includes(imgName)) return mdPath;
+    }
+    return null;
+}
+
+async function processMarkdown(file) {
+    console.log(`🔍 Escaneando MD: ${path.basename(file)}`);
+    try {
+        const raw = fs.readFileSync(file, "utf8");
+        let projectData = {};
+        const fmMatch = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+
+        if (fmMatch) {
+            try {
+                const front = yaml.parse(fmMatch[1]);
+                const validation = projectSchema.safeParse(front);
+                if (validation.success) projectData = validation.data;
+            } catch (e) {
+                console.error(`❌ Error YAML en ${file}:`, e.message);
             }
-        } catch (e) {
-            console.error(`❌ Error parseando YAML en ${file}:`, e.message);
         }
-    }
 
-    if (!projectData.title) {
-        // Fallback: extract from first heading (# Title) or use filename
-        const h1Match = raw.match(/^#\s+(.*)/m);
-        projectData.title = h1Match ? h1Match[1].trim() : path.basename(file, '.md');
-        projectData.description = "Documento sin descripción.";
-        projectData.tags = [];
-    }
+        if (!projectData.title) {
+            const h1Match = raw.match(/^#\s+(.*)/m);
+            projectData.title = h1Match ? h1Match[1].trim() : path.basename(file, '.md');
+            projectData.description = "Documento sin descripción.";
+            projectData.tags = [];
+        }
 
-    // 1️⃣ Guardar proyecto en la BD
-    upsertProject(projectData, file);
+        upsertProject(projectData, file);
 
-    // 2️⃣ Mapeo Inteligente de Imágenes Locales
-    // Si el proyecto está en una carpeta propia, escaneamos la carpeta por imágenes
-    const mdDir = path.dirname(file);
-    const mdName = path.basename(file);
-
-    fs.readdir(mdDir, async (err, files) => {
-        if (err) return;
-
-        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-        const mdFilesInDir = files.filter(f => f.endsWith('.md'));
-        const isProjectFolder = mdFilesInDir.length === 1;
+        // Scan for images that belong to this MD
+        const mdDir = path.dirname(file);
+        const siblings = fs.readdirSync(mdDir);
         const mdNameBase = path.basename(file, '.md');
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
 
-        for (const f of files) {
-            const ext = path.extname(f).toLowerCase();
-            if (imageExtensions.includes(ext)) {
-                // Inclusive matching: 
-                // 1. If image is mentioned in markdown text
-                // 2. OR if it starts with the markdown filename (e.g. story_illus_1.jpg)
-                // 3. OR if it's a dedicated project folder (only one .md)
+        for (const f of siblings) {
+            if (imageExtensions.includes(path.extname(f).toLowerCase())) {
                 const isMentioned = raw.includes(f);
                 const isPrefixMatched = f.startsWith(mdNameBase);
+                const isOnlyMd = mdFilesCount(mdDir) === 1;
 
-                if (isMentioned || isPrefixMatched || isProjectFolder) {
-                    const imgPath = path.join(mdDir, f);
-                    const dest = path.join(__dirname, "..", "public", "thumbnails");
-                    const thumb = await generateThumbnail(imgPath, dest);
-
-                    if (thumb) {
-                        db.run(
-                            `INSERT INTO artifacts (project_id, filename, mime, thumbnail_path)
-                     SELECT id, ?, 'image', ? FROM projects WHERE path = ?
-                     AND NOT EXISTS (
-                         SELECT 1 FROM artifacts a 
-                         INNER JOIN projects p ON a.project_id = p.id
-                         WHERE a.filename = ? AND p.path = ?
-                     )`,
-                            [f, thumb, file, f, file],
-                            err => {
-                                if (err) console.error("❌ Error guardando artefacto automático:", err.message);
-                                else console.log(`📸 Artefacto indexado: ${f} para ${file}`);
-                            }
-                        );
-                    }
+                if (isMentioned || isPrefixMatched || isOnlyMd) {
+                    await processImage(path.join(mdDir, f), file);
                 }
             }
         }
-    });
+    } catch (err) {
+        console.error("❌ Error procesando MD:", err.message);
+    }
+}
 
+function mdFilesCount(dir) {
+    return fs.readdirSync(dir).filter(f => f.endsWith('.md')).length;
+}
+
+async function processImage(imagePath, parentMdPath) {
+    if (!parentMdPath) {
+        parentMdPath = findMatchingMd(imagePath);
+    }
+    if (!parentMdPath) return;
+
+    const f = path.basename(imagePath);
+    const dest = path.join(__dirname, "..", "public", "thumbnails");
+    const thumb = await generateThumbnail(imagePath, dest);
+
+    if (thumb) {
+        db.run(
+            `INSERT INTO artifacts (project_id, filename, mime, thumbnail_path)
+             SELECT id, ?, 'image', ? FROM projects WHERE path = ?
+             AND NOT EXISTS (
+                 SELECT 1 FROM artifacts a 
+                 INNER JOIN projects p ON a.project_id = p.id
+                 WHERE a.filename = ? AND p.path = ?
+             )`,
+            [f, thumb, parentMdPath, f, parentMdPath],
+            err => {
+                if (err) console.error("❌ Error artefacto:", err.message);
+                else console.log(`📸 Imagen vinculada: ${f} → ${path.basename(parentMdPath)}`);
+            }
+        );
+    }
+}
+
+function removeFile(file) {
+    console.log(`🗑️ Eliminando rastro: ${path.basename(file)}`);
+    if (file.endsWith('.md')) {
+        db.run('DELETE FROM projects WHERE path = ?', [file]);
+    } else {
+        const f = path.basename(file);
+        db.run('DELETE FROM artifacts WHERE filename = ?', [f]);
+    }
+}
+
+// -------------------------------------------------------------------
+// 6️⃣  Watcher
+// -------------------------------------------------------------------
+const watchDirs = [
+    path.join(process.env.HOME || "", "openclaw/workspace/projects/personal"),
+    path.join(process.env.HOME || "", "openclaw/workspace/projects/automejora"),
+    path.join(process.env.HOME || "", "openclaw/workspace/projects/tareas-milton")
+];
+
+watchDirs.forEach(dir => { if (dir && !fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); });
+
+const watcher = chokidar.watch(watchDirs, {
+    ignored: /(^|[\/\\])\../,
+    persistent: true,
+    ignoreInitial: false
 });
 
-console.log("👀 Indexer observando:", watchDirs.join(", "));
+watcher
+    .on("add", file => {
+        if (file.endsWith(".md")) processMarkdown(file);
+        else if (['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(path.extname(file).toLowerCase())) processImage(file);
+    })
+    .on("change", file => {
+        if (file.endsWith(".md")) processMarkdown(file);
+        else if (['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(path.extname(file).toLowerCase())) processImage(file);
+    })
+    .on("unlink", file => {
+        removeFile(file);
+    });
+
+console.log("👀 Indexer V5 escuchando cambios (Mapeo Inteligente Pro)...");
