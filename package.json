@@ -1,0 +1,31 @@
+{
+    "name": "dashboard-v5",
+    "version": "0.1.0",
+    "description": "Dashboard V5 (Nexus Workspace)",
+    "main": "server/server.js",
+    "scripts": {
+        "start": "node server/server.js",
+        "dev": "nodemon server/server.js",
+        "init-db": "node scripts/init_db.js",
+        "index": "node scripts/indexer.js"
+    },
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "archiver": "^7.0.1",
+        "chokidar": "^3.6.0",
+        "cors": "^2.8.5",
+        "dompurify": "^3.3.1",
+        "dotenv": "^16.4.5",
+        "express": "^4.19.2",
+        "jsdom": "^28.1.0",
+        "marked": "^17.0.3",
+        "sharp": "^0.33.4",
+        "sqlite3": "^5.1.7",
+        "yaml": "^2.8.2",
+        "zod": "^3.25.76"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.4"
+    }
+}

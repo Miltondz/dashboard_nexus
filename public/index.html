@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus Dashboard — V5 Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <span class="logo-icon">🦞</span>
+          <h1>NEXUS</h1>
+        </div>
+        <span class="version-badge">V5 ENGINE</span>
+      </div>
+
+      <nav class="main-nav" id="main-nav">
+        <a href="#home" class="sidebar-item active" data-target="home">
+          <span class="nav-icon">⚡</span> Command Center
+        </a>
+        <a href="#projects" class="sidebar-item" data-target="projects">
+          <span class="nav-icon">📁</span> Proyectos
+        </a>
+        <a href="#gallery" class="sidebar-item" data-target="gallery">
+          <span class="nav-icon">🖼️</span> Galería
+        </a>
+        <a href="#ideas" class="sidebar-item" data-target="ideas">
+          <span class="nav-icon">💡</span> Ideas
+        </a>
+        <a href="#tasks" class="sidebar-item" data-target="tasks">
+          <span class="nav-icon">✅</span> Tareas
+        </a>
+      </nav>
+
+      <div class="system-status-sidebar">
+        <div class="status-dot online"></div>
+        <span>Systems Online</span>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="dashboard">
+
+      <header class="topbar">
+        <input type="text" placeholder="Buscar en Nexus..." class="search-input" id="global-search">
+        <button class="button-primary">⚙️ Configuración</button>
+      </header>
+
+      <!-- HOME (COMMAND CENTER) -->
+      <section id="home" class="view-section active">
+        <!-- AGENT PANEL -->
+        <section id="agent-panel" class="card" style="margin-bottom:28px;">
+          <div class="agent-panel-inner" id="agent-hero-container">
+            <div class="loading-state">Inicializando Agente...</div>
+          </div>
+        </section>
+
+        <!-- WIDGET METRICS -->
+        <section id="metrics-row" class="metrics-row" style="margin-bottom:28px;">
+          <div class="loading-state" style="grid-column: 1/-1;">Cargando métricas...</div>
+        </section>
+
+        <!-- DASHBOARD GRID -->
+        <section class="dashboard-grid" style="margin-bottom:28px;">
+          <div id="timeline" class="card">
+            <div class="card-header">
+              <span class="card-title-icon">⏱️</span> Activity Timeline
+            </div>
+            <div class="tl-filters">
+              <button class="tag-btn active" data-days="7">7 días</button>
+              <button class="tag-btn" data-days="30">30 días</button>
+              <button class="tag-btn" data-days="90">90 días</button>
+              <button class="tag-btn" data-days="0">Todo</button>
+            </div>
+            <div id="timeline-container" class="timeline-feed">
+              <div class="loading-state">Cargando timeline...</div>
+            </div>
+          </div>
+
+          <div id="insights-panel" style="display: flex; flex-direction: column; gap: 24px;">
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title-icon">📊</span> Activity Heatmap
+              </div>
+              <div id="heatmap-container" class="heatmap-container">
+                <div class="loading-state">Calculando...</div>
+              </div>
+            </div>
+
+            <div class="card insight-radar">
+              <div class="card-header" style="align-self: flex-start; width: 100%;">
+                <span class="card-title-icon">🎯</span> Radar Analytics
+              </div>
+              <canvas id="radarChart" class="radar-canvas" width="260" height="260"></canvas>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- OTHER SECTIONS -->
+      <section id="projects" class="view-section">
+        <div class="card">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <span><span class="card-title-icon">📁</span> Biblioteca de Proyectos</span>
+            <div class="header-controls" style="display:flex; gap:12px;">
+              <select id="sort-select" class="tag-btn"
+                style="background:var(--bg-2); border:1px solid var(--border-subtle); color:var(--text-dim); padding:4px 8px; font-size:0.8rem;">
+                <option value="updated">Recientes</option>
+                <option value="alpha">A - Z</option>
+              </select>
+              <button id="group-toggle" class="tag-btn" title="Agrupar por Proyecto Padre">📂 Agrupar</button>
+            </div>
+          </div>
+          <div class="tl-filters" id="tag-filter-bar"></div>
+          <div class="projects-grid" id="all-projects-container">
+            <div class="loading-state">Cargando proyectos...</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="gallery" class="view-section">
+        <div class="card">
+          <div class="card-header"><span class="card-title-icon">🖼️</span> Galería Visual</div>
+          <div class="projects-grid" id="gallery-container">
+            <div class="loading-state">Cargando galería...</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="ideas" class="view-section">
+        <div class="card">
+          <div class="card-header"><span class="card-title-icon">💡</span> Banco de Ideas</div>
+          <div id="ideas-container"></div>
+        </div>
+      </section>
+
+      <section id="tasks" class="view-section">
+        <div class="card">
+          <div class="card-header"><span class="card-title-icon">✅</span> Gestión de Tareas</div>
+          <div class="tl-filters" id="task-filters">
+            <button class="tag-btn active" data-filter="all">📋 Todas</button>
+            <button class="tag-btn" data-filter="pending">⏳ Pendientes</button>
+            <button class="tag-btn" data-filter="done">✅ Completadas</button>
+          </div>
+          <div id="tasks-container"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Project Detail Modal -->
+  <div class="modal-overlay" id="project-modal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <button class="modal-back" id="modal-back">← Volver</button>
+        <h2 id="modal-title">Proyecto</h2>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox-overlay" id="lightbox">
+    <button class="lb-close" id="lightbox-close">✕</button>
+    <button class="lb-nav lb-prev" id="lightbox-prev">‹</button>
+    <button class="lb-nav lb-next" id="lightbox-next">›</button>
+    <div class="lb-content">
+      <img id="lightbox-img" src="" alt="Full size">
+      <div class="lb-info" id="lightbox-info"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Chart.js for Radar -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>

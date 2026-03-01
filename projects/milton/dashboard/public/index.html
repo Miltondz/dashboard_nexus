@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patroclo | Full Stack Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Merriweather:wght@400;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-wrapper">
+        <aside class="sidebar">
+            <div class="brand">🦾 Patroclo v3</div>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#home">🏠 Inicio</a></li>
+                    <li><a href="#escritura">✍️ Relatos</a></li>
+                    <li><a href="#investigacion">🔬 Investigación</a></li>
+                    <li><a href="#proyectos">💻 Proyectos Coding</a></li>
+                    <li><a href="#arte">🎨 Galería de Arte</a></li>
+                    <li><a href="#tareas">✅ Tareas e Ideas</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main id="main-view-container">
+            </main>
+    </div>
+
+    <div id="reader-overlay" class="reader-overlay hidden">
+        <button class="close-btn" onclick="app.closeReader()">✕</button>
+        <div id="reader-content"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="ui-modules.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

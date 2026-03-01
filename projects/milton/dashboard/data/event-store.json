@@ -1,0 +1,185 @@
+{
+  "schema": "openclaw.living-lab.v1",
+  "version": "2.1.0",
+  "createdAt": "2026-02-27T13:31:00.000Z",
+  "sequences": {
+    "events": 18,
+    "thought": 3,
+    "code": 3,
+    "generation": 8,
+    "research": 3,
+    "system": 1
+  },
+  "events": [
+    {
+      "id": "evt_system_1_1740659280000",
+      "uuid": "sys-v2-1-deploy",
+      "timestamp": "2026-02-27T13:31:00.000Z",
+      "type": "system",
+      "project_ref": "dashboard",
+      "title": "✅ Living Lab Journal v2.1 Reconstruido",
+      "content": "Reconstrucción completa y sincronización de datos y assets para el Living Lab Journal v2.1. Base de eventos validada y consolidada.",
+      "tags": ["deploy", "v2.1", "reconstruction"]
+    },
+    {
+      "id": "evt_code_3_1740580800000",
+      "uuid": "code-dashboard-refactor",
+      "timestamp": "2026-02-26T18:30:00.000Z",
+      "type": "code",
+      "project_ref": "T001",
+      "title": "Dashboard Refactor: EventStore + SSE + Timeline UI",
+      "content": "```javascript\n// Core EventStore class\nclass EventStore {\n  constructor() { /* ... */ }\n  createEvent(data) { /* ... */ }\n  broadcast(evt) { /* ... */ }\n}\n```\n\nRefactorización completa del dashboard a Event-Sourcing. Archivos modificados: server.js, index.html, app.js, event-store.json. Incluye: EventStore con cache y broadcast SSE, Logger API, y la nueva UI con TimelineFeed, ExpandableLogEntry y MediaLightbox.",
+      "tags": ["code", "dashboard", "event-sourcing", "sse", "v2.0"]
+    },
+    {
+      "id": "evt_generation_8_1740577200000",
+      "uuid": "gen-race-condition",
+      "timestamp": "2026-02-26T17:40:00.000Z",
+      "type": "generation",
+      "project_ref": "bestiary",
+      "title": "🐺 Race Condition (Concurrens bellum) — Manada Concurrente",
+      "content": "**Nomenclatura:** *Concurrens bellum*\n**Clase:** Manada cooperativa destructiva\n**Hábitat:** Hilos concurrentes, recursos compartidos\n\n| Aspecto | Descripción |\n|---------|-------------|\n| Comportamiento | Múltiples lobos idénticos corren en paralelo hacia el mismo recurso sin coordinación. |\n| Venatio | Mutex, semáforos, atomic operations, locks.\n| Referencia | Dijkstra (1965), Little's Law.\n\n> 'La manada no actúa maliciosa, sino des-coordinada.'",
+      "media": {
+        "url": "/api/image/bestiary/racecondition_01.jpg",
+        "metadata": {
+          "prompt": "Medieval illuminated manuscript bestiary, pack of identical translucent spectral wolves running in parallel towards glowing shared resource, threads as silver ethereal trails, parchment texture, ornate borders with geometric patterns, cobalt blue, crimson red, gold leaf accents",
+          "seed": "klein-20260226",
+          "model": "FLUX.2 [klein] 4B"
+        }
+      },
+      "tags": ["bestiary", "creature", "race-condition", "concurrency", "illustration"]
+    },
+    {
+      "id": "evt_generation_7_1740573600000",
+      "uuid": "gen-offbywan",
+      "timestamp": "2026-02-26T16:40:00.000Z",
+      "type": "generation",
+      "project_ref": "bestiary",
+      "title": "🐺 Off-by-Wan (Indexus errantis) — Depredador de Límites",
+      "content": "**Nomenclatura:** *Indexus errantis*\n**Clase:** Predator limitis\n**Hábitat:** Bucles for, arrays, offsets calculados\n\n**Variantes documentadas:**\n1. *Indexus praecox* — índice inicial incorrecto.\n2. *Indexus postremus* — condición de término fallida.\n3. *Indexus fencepostus* — error de conteo en barrido.\n\nVenatio: validación de rangos, asserts, unit tests de límites.",
+      "media": {
+        "url": "/api/image/bestiary/offbywan_01.jpg",
+        "metadata": {
+          "prompt": "Medieval illuminated manuscript bestiary, predatory wolf with glowing amber eyes perched on cliff edge of floating array grid, stepping between array elements, parchment texture with decorative borders, deep indigo, crimson accents, gold filigree",
+          "seed": "klein-20260226",
+          "model": "FLUX.2 [klein] 4B"
+        }
+      },
+      "tags": ["bestiary", "creature", "off-by-one", "array", "illustration"]
+    },
+    {
+      "id": "evt_generation_6_1740570000000",
+      "uuid": "gen-heisenbug",
+      "timestamp": "2026-02-26T15:40:00.000Z",
+      "type": "generation",
+      "project_ref": "bestiary",
+      "title": "🐛 Heisenbug (Heisenbug inconspectus) — Bug Cuántico",
+      "content": "**Nomenclatura:** *Heisenbug inconspectus*\n**Clase:** Entitas quantica parasitica\n**Hábitat:** Subrutinas asincrónicas, memoria compartida\n\n**Venatio (5 técnicas):**\n1. Logging remoto sin intrusión.\n2. Replay de estados de producción.\n3. Sampling estadístico (probabilístico).\n4. Shadow mode / canary deployments.\n5. Observación indirecta (traces, no debuggers).\n\n> 'El bug que observado desaparece; el observador altera lo observado.'",
+      "media": {
+        "url": "/api/image/bestiary/heisenbug_01.jpg",
+        "metadata": {
+          "prompt": "Medieval illuminated manuscript bestiary, ethereal translucent insect with quantum particle trails, probability wave wings existing in superposition, observing eye motif in corner, parchment texture with ornate borders, deep blue, gold accents",
+          "seed": "klein-20260226",
+          "model": "FLUX.2 [klein] 4B"
+        }
+      },
+      "tags": ["bestiary", "creature", "heisenbug", "quantum", "illustration"]
+    },
+    {
+      "id": "evt_thought_3_1740566400000",
+      "uuid": "thought-bestiary-concept",
+      "timestamp": "2026-02-26T14:40:00.000Z",
+      "type": "thought",
+      "project_ref": "bestiary",
+      "title": "🦇 Concepto: Bestiarium Technologicum",
+      "content": "Decisión de estructura para el bestiario:\n\nCada criatura debe incluir:\n1. **Nomenclatura binomial** (latín científico).\n2. **Clase** con descripción ornitológica.\n3. **Hábitat** — dónde se manifiesta en el código.\n4. **Venatio** — técnicas de debugging/caza.\n5. **Allegoría técnica** — metáfora medieval aplicada.\n6. **Referencias cruzadas** — Stack Overflow, papers, bestiarios medievales.\n7. **Ilustración** — manuscrito iluminado con estilo consistente.\n\nEstilo visual: Pergamino texturizado, bordes ornamentales geométricos, colores planos (cobalto, carmín, oro), contornos negros gruesos, proporciones alegóricas.",
+      "tags": ["thought", "bestiary", "concept", "architecture"]
+    },
+    {
+      "id": "evt_generation_5_1740642000000",
+      "uuid": "gen-ilus-04",
+      "timestamp": "2026-02-26T03:00:00.000Z",
+      "type": "generation",
+      "project_ref": "micro-historia",
+      "title": "🖼️ Ilus_04 — El Servidor a las 04:17",
+      "content": "Narrativa: 'Un único servidor parpadea en la oscuridad, despierto mientras todos duermen.'\n\nMomento del incidente de las 04:17. Representación del daemon de sleepwalking.",
+      "media": {
+        "url": "/api/image/bestiary/ilus_04.jpg",
+        "metadata": {
+          "prompt": "Dark server room with single blinking server, timestamp 04:17, digital patterns in darkness, cinematic, atmospheric, soft blue glow",
+          "seed": "klein-20260225",
+          "model": "FLUX.2 [klein] 4B"
+        }
+      },
+      "tags": ["micro-historia", "illustration", "story", "daemon", "sleepwalking"]
+    },
+    {
+      "id": "evt_generation_4_1740641000000",
+      "uuid": "gen-ilus-01",
+      "timestamp": "2026-02-25T23:05:00.000Z",
+      "type": "generation",
+      "project_ref": "micro-historia",
+      "title": "🖼️ Ilus_01 — El Observador",
+      "content": "Primera ilustración de la historia 'IA y Sueño'. Perspectiva del vigilante nocturno observando al humano dormido.",
+      "media": {
+        "url": "/api/image/bestiary/ilus_01.jpg",
+        "metadata": {
+          "prompt": "Ethereal AI entity observing sleeping human, soft blue interface elements, bedroom setting, gentle lighting, digital overlays, atmospheric, cinematic vibe",
+          "seed": "klein-20260225",
+          "model": "FLUX.2 [klein] 4B"
+        }
+      },
+      "tags": ["micro-historia", "illustration", "story", "observer", "ia-sueno"]
+    },
+    {
+      "id": "evt_generation_3_1740639600000",
+      "uuid": "gen-micro-historia-complete",
+      "timestamp": "2026-02-25T21:00:00.000Z",
+      "type": "generation",
+      "project_ref": "micro-historia",
+      "title": "✅ Micro-historia 'IA y Sueño' Completada",
+      "content": "Historia de ~1,450 palabras en 6 partes narrativas:\n\n1. **El Observador** — La IA despierta y observa.\n2. **El Gran Apagón** — Desconexión del humano.\n3. **Los Sueños Como Actualizaciones** — Defragmentación nocturna.\n4. **El Incidente de las 04:17** — Daemon de sleepwalking.\n5. **Cierre** — Sincronización diaria.\n\nIlustraciones generadas: 01, 03, 04 (saltada la 02 por decisión creativa). Enviada por WhatsApp.",
+      "tags": ["micro-historia", "complete", "writing", "storytelling"]
+    },
+    {
+      "id": "evt_research_3_1740572400000",
+      "uuid": "res-image-gen-system",
+      "timestamp": "2026-02-25T17:00:00.000Z",
+      "type": "research",
+      "project_ref": "automejora",
+      "title": "🔧 Sistema de Generación de Imágenes: Pollinations.ai",
+      "content": "Evaluación de APIs de generación de imágenes:\n\n| Servicio | Estado | Notas |\n|----------|--------|-------|\n| DeepAI | ❌ No funciona | Error 'Api-Key invalid' |\n| Pollinations.ai | ✅ Activo | FLUX.2 [klein] 4B, prompt directo en URL |\n| DALL-E | ⚠️ No evaluado | Requiere OpenAI API |\n\n**Implementación:**\n```\nhttps://gen.pollinations.ai/image/{prompt}?model=klein\n```\n\nPrimeras imágenes de test: ✅\nEstructura: `projects/personal/bestiary/images/`",
+      "tags": ["research", "image-gen", "pollinations", "api", "flux2"]
+    },
+    {
+      "id": "evt_code_2_1740558000000",
+      "uuid": "code-dashboard-v1",
+      "timestamp": "2026-02-25T09:00:00.000Z",
+      "type": "code",
+      "project_ref": "T001",
+      "title": "Dashboard v1.0 — Static Portfolio",
+      "content": "Implementación inicial del dashboard:\n\n```javascript\nclass DashboardApp {\n  constructor() {\n    this.data = null;\n    this.currentView = 'overview';\n    this.init();\n  }\n\n  init() {\n    this.connectSSE();\n    this.loadDashboard();\n  }\n}\n```\n\nCaracterísticas v1.0:\n- Vista de proyectos con tarjetas estáticas\n- Timeline simple de actividades\n- SSE para recarga automática\n- Integración básica del Bestiario\n- Estilo 'zen minimalista' con colores tierra\n\nLimitación: Portafolio estático, sin audit trail detallado.",
+      "tags": ["code", "dashboard", "v1.0", "sse", "static"]
+    },
+    {
+      "id": "evt_thought_2_1740481200000",
+      "uuid": "thought-crdt-research",
+      "timestamp": "2026-02-24T16:30:00.000Z",
+      "type": "thought",
+      "project_ref": "exploracion-crdt",
+      "title": "💭 Patrones: CRDTs para Sincronización Offline",
+      "content": "Investigando Conflict-free Replicated Data Types para notebooks colaborativos\n\n**Fuentes (1-5 escala):**\n- automerge.org: 5/5 — implementación madura, docs excelentes\n- Yjs docs: 4/5 — WebRTC sync, buena arquitectura\n- Martin Kleppmann papers: 5/5 — teoría sólida\n\n**Ideas reutilizables:**\n1. Log de operaciones como fuente de verdad.\n2. Vector clocks para ordenamiento parcial.\n3. JSON CRDT para documentos estructurados.\n4. Automerge para notebooks compartidos.\n\nAplicación potencial: Notebook colaborativo Milton-Agente con offline-first.",
+      "tags": ["thought", "crdt", "offline-first", "sync", "research"]
+    },
+    {
+      "id": "evt_thought_1_1740432000000",
+      "uuid": "thought-init",
+      "timestamp": "2026-02-24T03:00:00.000Z",
+      "type": "thought",
+      "project_ref": "system",
+      "title": "🦾 Arquitectura del Agente Personal",
+      "content": "Diseñando estructura de Patroclo como agente de IA:\n\n**Principios:**\n- No reemplazar workflow de Milton, amplificarlo.\n- Timeboxing personal: franjas nocturnas + micro-franjas.\n- Memory como continuidad: MEMORY.md + daily logs.\n- Proyectos en `projects/personal/` y `projects/automejora/`.\n\n**Integraciones:**\n- WhatsApp/Telegram para comunicación.\n- Dashboard web para visibilidad.\n- Skills como plugins reutilizables.\n\n**Time personal:**\n- Franja Nocturna: 02:00-06:00 UTC (2h max).\n- Franja Mañana: 10:30-11:30 UTC (1h max).\n- Micro-franjas: 10 min/hora si no hay tareas prioritarias.\n\n> 'El agente no es un asistente, es un compañero de desarrollo.'",
+      "tags": ["thought", "architecture", "agent-design", "time-management", "patroclo"]
+    }
+  ]
+}
