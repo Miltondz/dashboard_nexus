@@ -23,11 +23,6 @@
 - **Activity Heatmap:** A GitHub-style productivity visualization tracking project updates and intensity over the last 28 days.
 - **Markdown Core:** Renders full Markdown content with secure image proxies for high-resolution local assets.
 
-### 📋 Organizational Power
-- **Zen Kanban:** Minimalist task tracking with `Pending`, `In Progress`, and `Done` states.
-- **Ideas Spark:** A dedicated "Inbox" for seeds and thoughts that aren't yet ready to become full project folders.
-- **Heuristic Grouping:** Automatic clustering of cards based on title separators (`:`, `-`, `—`), keeping series and related logs visually connected.
-
 ---
 
 ## 🛠️ Installation & Setup
@@ -42,14 +37,14 @@
 git clone https://github.com/Miltondz/dashboard_nexus.git
 cd dashboard_nexus
 npm install
-node server/server.js # Or use PM2/Screen on Port 3456
+node server/server.js # Default Port: 3099 (or 3456 as configured)
 ```
 
-### 3. Folder Structure (Nexus Protocol)
-The dashboard watches specific internal paths. Content should be stored in:
-- `/projects/personal/`
-- `/projects/automejora/`
-- `/projects/tareas-milton/`
+### 3. Folder Structure & Image Protocol
+The dashboard watches specific paths (`/projects/personal/`, `/projects/automejora/`, `/projects/tareas-milton/`).
+
+- **Projects with images:** Create a dedicated folder (e.g., `personal/my-story/`), save `story.md` and all images (`.jpg`, `.png`, `.webp`) in that same folder.
+- **Images Mapping:** Images saved next to a `.md` file are automatically indexed as Gallery Artifacts for that project. Use relative links like `![alt](image.jpg)`.
 
 **Standard Project Format:**
 Projects must be Markdown files with YAML front-matter:
@@ -66,7 +61,9 @@ tags: IA, Research, Story
 
 ## 🔌 Agent Protocol (API)
 
-Dashboard Nexus provides an authenticated API for AI Agents. All agent requests require a valid `X-Agent-API-Key`.
+Dashboard Nexus provides an authenticated API for AI Agents.
+
+**Auth Header:** `X-Agent-API-Key: xxxxxxxxxx`
 
 ### 📡 Consultation Methods (GET)
 - `GET /api/agent/status`: Heartbeat check to verify key validity.
@@ -75,9 +72,25 @@ Dashboard Nexus provides an authenticated API for AI Agents. All agent requests 
 - `GET /api/agent/ideas`: Lists all captured thoughts and seeds.
 
 ### ✍️ Action Methods (POST)
-- `POST /api/agent/tasks`: Create tasks (Body: `title`, `status`, `due_date`).
-- `POST /api/agent/ideas`: Save new ideas (Body: `title`, `content`, `tags`).
-- `POST /api/projects/:id/tags`: Atomic update to tags (Syncs DB and .md file).
+
+#### POST /ideas
+Registers a new seed or spark for future work (not tied to a specific project folder).
+- **Body:** `{ "title": "...", "content": "...", "tags": "tag1, tag2" }`
+- **Example:**
+```bash
+curl -X POST -H "X-Agent-API-Key: xxxxxxx" \
+     -d '{"title": "Idea Name", "content": "The description"}' \
+     http://localhost:3099/api/agent/ideas
+```
+
+#### POST /tasks
+Registers a general task in the global checklist.
+- **Body:** `{ "title": "...", "status": "pending", "due_date": "YYYY-MM-DD" }`
+- **Status Options:** `pending`, `in_progress`, `done`.
+
+#### POST /projects/:id/tags
+Atomic update to tags. This synchronizes the database and the physical `.md` file on disk.
+- **Body:** `{ "tags": "new, tags, list" }`
 
 ---
 
