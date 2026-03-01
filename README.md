@@ -40,6 +40,15 @@ npm install
 node server/server.js # Default Port: 3099 (or 3456 as configured)
 ```
 
+### 🌐 Network & Remote Access
+In this specific deployment, the dashboard runs on a **Virtual Machine (Ubuntu Server)**. To access the interface from another machine on the same local network, an **SSH Tunnel** is used to securely bridge the ports.
+
+**Example Tunnel Command:**
+```bash
+ssh -N -L 3456:127.0.0.1:3456 user@vm-ip-address -p 22
+```
+After establishing the tunnel, the dashboard is accessible at `http://localhost:3456` from the host machine.
+
 ### 3. Folder Structure & Image Protocol
 The dashboard watches specific paths (`/projects/personal/`, `/projects/automejora/`, `/projects/tareas-milton/`).
 
